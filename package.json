@@ -1,0 +1,43 @@
+{
+  "name": "duwa-lang",
+  "displayName": "Duwa Language",
+  "description": "Syntax highlighting for Duwa language",
+  "version": "0.0.1",
+  "repository": "https://github.com/sevenreup/duwa-extensions",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "duwa",
+        "aliases": [
+          "Duwa",
+          "duwa"
+        ],
+        "extensions": [
+          ".duwa"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "duwa",
+        "scopeName": "source.duwa",
+        "path": "./syntaxes/duwa.tmLanguage.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "vsce": "^2.15.0"
+  }
+}
+

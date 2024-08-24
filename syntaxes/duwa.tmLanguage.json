@@ -1,0 +1,49 @@
+{
+  "name": "Duwa",
+  "scopeName": "source.duwa",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#comments"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.duwa",
+          "match": "\\b(ndondomeko|kalasi|nambala|za|ngati|bweza|mgwirizano|pamene)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.duwa",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.duwa",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.duwa",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.duwa",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    }
+  }
+}
