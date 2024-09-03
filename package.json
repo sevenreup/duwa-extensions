@@ -2,7 +2,9 @@
   "name": "duwa-lang",
   "displayName": "Duwa Language",
   "description": "Syntax highlighting for Duwa language",
+  "publisher": "sevenreup",
   "version": "0.0.1",
+  "icon": "assets/images/duwa.png",
   "repository": "https://github.com/sevenreup/duwa-extensions",
   "engines": {
     "vscode": "^1.60.0"
