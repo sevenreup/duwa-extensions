@@ -6,16 +6,20 @@
   "version": "0.0.1",
   "icon": "assets/images/duwa.png",
   "repository": "https://github.com/sevenreup/duwa-extensions",
-  "engines": {
-    "vscode": "^1.60.0"
-  },
-  "scripts": {
-    "package": "vsce package",
-    "publish": "vsce publish"
-  },
   "categories": [
     "Programming Languages"
   ],
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "lint": "eslint",
+    "postinstall": "cd client && pnpm install && cd ..",
+    "test": "sh ./scripts/e2e.sh"
+  },
+  "main": "./client/out/extension",
   "contributes": {
     "languages": [
       {
@@ -36,10 +40,14 @@
         "scopeName": "source.duwa",
         "path": "./syntaxes/duwa.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {}
   },
   "devDependencies": {
+    "typescript": "^5.8.2",
     "vsce": "^2.15.0"
+  },
+  "engines": {
+    "vscode": "^1.60.0"
   }
 }
-
