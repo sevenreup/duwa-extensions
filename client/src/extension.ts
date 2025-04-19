@@ -14,57 +14,68 @@ import {
   TransportKind,
 } from "vscode-languageclient/node";
 import * as vscode from "vscode";
+import * as net from "net";
+import * as WebSocket from "ws";
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-  let serverExecutable: string =
-    "U:\\projects\\skybox\\duwa\\chewa\\bin\\duwa-tools.exe"; // Default to duwa-tools in PATH
+  // Get configuration
+  const config = workspace.getConfiguration("duwaLanguageServer");
+  const isDebugMode =
+    process.env.VSCODE_DEBUG_MODE === "true" || vscode.debug.activeDebugSession;
+  const serverExecutable: string =
+    "U:\\projects\\skybox\\duwa\\chewa\\bin\\duwa-tools.exe";
+  const websocketUrl =
+    config.get<string>("websocketUrl") || "ws://localhost:4389";
 
-  //   const executableName = "";
-  //   serverExecutable = context.asAbsolutePath(
-  //     path.join("server", executableName)
-  //   );
+  let serverOptions: ServerOptions;
 
-  //   // Make sure the file exists and is executable (not needed on Windows)
-  //   if (process.platform !== "win32") {
-  //     if (!fs.existsSync(serverExecutable)) {
-  //       window.showErrorMessage(
-  //         `Server executable not found: ${serverExecutable}`
-  //       );
-  //       return;
-  //     }
+  if (isDebugMode) {
+    // In debug mode, use WebSocket connection
+    console.log("Duwa LSP: Using WebSocket connection in debug mode");
 
-  //     try {
-  //       fs.chmodSync(serverExecutable, "755");
-  //     } catch (error) {
-  //       window.showErrorMessage(`Failed to set executable permissions: ${error}`);
-  //       return;
-  //     }
-  //   }
+    serverOptions = () => {
+      return new Promise<StreamInfo>((resolve, reject) => {
+        const ws = new WebSocket(websocketUrl);
 
-  // If the extension is launched in debug mode then the debug server options are used
-  // Otherwise the run options are used
-  const serverOptions: ServerOptions = {
-    run: {
-      command: serverExecutable,
-      args: [
-        "lsp",
-        "-v",
-        "-l",
-        "U:\\projects\\skybox\\duwa\\chewa\\bin\\out.txt",
-      ],
-    },
-    debug: {
-      command: serverExecutable,
-      args: [
-        "lsp",
-        "-v",
-        "-l",
-        "U:\\projects\\skybox\\duwa\\chewa\\bin\\out.txt",
-      ],
-    },
-  };
+        ws.on("open", () => {
+          console.log(`Connected to WebSocket server at ${websocketUrl}`);
+
+          // Create duplex stream from the WebSocket
+          const reader = WebSocket.createWebSocketStream(ws);
+
+          resolve({
+            reader: reader,
+            writer: reader,
+          });
+        });
+
+        ws.on("error", (error) => {
+          console.error(`WebSocket connection error: ${error.message}`);
+          reject(error);
+        });
+
+        ws.on("close", (code, reason) => {
+          console.log(`WebSocket connection closed: ${code} - ${reason}`);
+        });
+      });
+    };
+  } else {
+    // In normal mode, use standard process-based connection
+    serverOptions = {
+      run: {
+        command: serverExecutable,
+        args: ["lsp", "-f", "U:\\projects\\skybox\\duwa\\chewa\\bin\\out.txt"],
+      },
+      debug: {
+        command: serverExecutable,
+        args: ["lsp", "-f", "U:\\projects\\skybox\\duwa\\chewa\\bin\\out.txt"],
+      },
+    };
+  }
+
+  let jj: Number
 
   // Options to control the language client
   const clientOptions: LanguageClientOptions = {
@@ -74,6 +85,9 @@ export function activate(context: ExtensionContext) {
       // Notify the server about file changes to '.clientrc files contained in the workspace
       fileEvents: workspace.createFileSystemWatcher("**/.duwa"),
     },
+    outputChannelName: "Duwa Language Server",
+    // Enable logging of communication between client and server
+    traceOutputChannel: window.createOutputChannel("Duwa LSP Trace"),
   };
 
   // Create the language client and start the client.
@@ -84,8 +98,35 @@ export function activate(context: ExtensionContext) {
     clientOptions
   );
 
+  // Register commands for connection management
+  context.subscriptions.push(
+    vscode.commands.registerCommand("duwa.restartLspServer", async () => {
+      if (client) {
+        await client.stop();
+        client.start();
+        vscode.window.showInformationMessage("Duwa Language Server restarted");
+      }
+    })
+  );
+
   // Start the client. This will also launch the server
   client.start();
+
+  // Add status bar item
+  const statusBarItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  );
+  statusBarItem.text = isDebugMode
+    ? "$(bug) Duwa LSP (WebSocket)"
+    : "$(check) Duwa LSP";
+  statusBarItem.tooltip = isDebugMode
+    ? `Connected to WebSocket LSP server at ${websocketUrl}`
+    : "Using standard LSP connection";
+  statusBarItem.command = "duwa.restartLspServer";
+  statusBarItem.show();
+
+  context.subscriptions.push(statusBarItem);
 }
 
 export function deactivate(): Thenable<void> | undefined {
